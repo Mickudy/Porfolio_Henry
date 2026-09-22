@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarBot — Asistente de coches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fdfaf5;
+    --ink: #1e1b2e;
+    --muted: #6b6580;
+    --violet: #6c5ce7;
+    --coral: #ff6b4a;
+    --mint: #12b3a0;
+    --mustard: #f2a71b;
+    --line: #e8e2d6;
+    --card: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16131f;
+      --ink: #f1eef7;
+      --muted: #a79fc0;
+      --line: #2c2740;
+      --card: #1f1a2e;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #16131f;
+    --ink: #f1eef7;
+    --muted: #a79fc0;
+    --line: #2c2740;
+    --card: #1f1a2e;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  header.hero {
+    padding: 60px 0 30px;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--violet);
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(2.2rem, 7vw, 3rem);
+    margin: 0 0 14px;
+    background: linear-gradient(100deg, var(--violet) 0%, var(--coral) 55%, var(--mustard) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 46ch;
+    margin: 0 auto;
+  }
+
+  .chat-panel {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    margin: 30px 0 60px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .chat-panel::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 5px;
+    background: linear-gradient(90deg, var(--violet), var(--coral), var(--mustard), var(--mint));
+  }
+
+  .messages {
+    height: 420px;
+    overflow-y: auto;
+    padding: 26px 20px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .msg {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.96rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    animation: pop 0.25s ease;
+  }
+
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .msg { animation: none; }
+  }
+
+  .msg.bot {
+    align-self: flex-start;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-bottom-left-radius: 4px;
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--violet), var(--coral));
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.thinking {
+    align-self: flex-start;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+
+  .msg.error {
+    align-self: center;
+    background: transparent;
+    border: 1.5px dashed var(--coral);
+    color: var(--coral);
+    font-size: 0.88rem;
+    text-align: center;
+  }
+
+  .composer {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    border-top: 1.5px solid var(--line);
+  }
+
+  .composer input {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.96rem;
+    padding: 12px 16px;
+    border-radius: 100px;
+    border: 1.5px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+  }
+
+  .composer input:focus {
+    border-color: var(--violet);
+  }
+
+  .composer button {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--violet), var(--coral));
+    border: none;
+    padding: 0 22px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+
+  .composer button:hover:not(:disabled) { transform: translateY(-2px); }
+  .composer button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .composer button:hover { transform: none; }
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 16px 16px;
+  }
+
+  .suggestion {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    padding: 6px 12px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .suggestion:hover {
+    border-color: var(--violet);
+    color: var(--violet);
+  }
+
+  .unavailable {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  footer {
+    text-align: center;
+    padding: 0 0 60px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  a.back:hover { color: var(--violet); border-color: var(--violet); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="badge">🚗 Proyecto personal</span>
+    <h1>CarBot</h1>
+    <p class="subtitle">Pregúntame lo que quieras sobre coches: modelos, mantenimiento, comparativas, curiosidades... ¡lo que se te ocurra!</p>
+  </header>
+
+  <div class="chat-panel">
+    <div class="messages" id="messages">
+      <div class="msg bot">¡Hola! 👋 Soy CarBot, pregúntame lo que quieras sobre coches.</div>
+    </div>
+    <div class="suggestions" id="suggestions">
+      <span class="suggestion">¿Eléctrico o gasolina?</span>
+      <span class="suggestion">Coche fiable por menos de 15.000€</span>
+      <span class="suggestion">¿Cada cuánto cambiar el aceite?</span>
+    </div>
+    <div class="composer">
+      <input id="input" type="text" placeholder="Escribe tu pregunta sobre coches..." autocomplete="off">
+      <button id="sendBtn">Enviar</button>
+    </div>
+  </div>
+
+  <footer>
+    Proyecto de <strong>Henry Ortega Esis</strong> — chat impulsado por IA
+  </footer>
+</div>
+
+<script>
+  const SYSTEM_PROMPT = "Eres CarBot, un asistente experto en coches, amable y cercano. Respondes siempre en español, de forma clara y concisa (máximo un par de párrafos cortos o una lista breve). Solo hablas de temas relacionados con coches: modelos, mecánica, mantenimiento, comparativas, historia del motor, conducción, etc. Si te preguntan algo que no tiene nada que ver con coches, redirige la conversación con humor hacia el mundo del motor.";
+
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('input');
+  const sendBtn = document.getElementById('sendBtn');
+  const suggestionsEl = document.getElementById('suggestions');
+
+  let turns = [];
+  let sample = null;
+  let busy = false;
+
+  function addMessage(role, text) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function setBusy(state) {
+    busy = state;
+    sendBtn.disabled = state;
+    inputEl.disabled = state;
+  }
+
+  async function send(text) {
+    if (!text.trim() || busy || !sample) return;
+    addMessage('user', text);
+    turns.push({ role: 'user', content: text });
+    setBusy(true);
+
+    const thinkingEl = addMessage('thinking', 'Pensando...');
+
+    try {
+      const { text: reply } = await sample(
+        [{ role: 'user', content: SYSTEM_PROMPT }, ...turns],
+        {
+          cache: false,
+          onText: ({ text }) => { thinkingEl.textContent = text; thinkingEl.className = 'msg bot'; messagesEl.scrollTop = messagesEl.scrollHeight; }
+        }
+      );
+      thinkingEl.textContent = reply;
+      thinkingEl.className = 'msg bot';
+      turns.push({ role: 'assistant', content: reply });
+    } catch (e) {
+      thinkingEl.remove();
+      let copy = 'Ha ocurrido un error, inténtalo de nuevo.';
+      if (e.code === 'not_granted') copy = 'Necesitas permitir el uso de IA en esta página para chatear con CarBot.';
+      else if (e.code === 'rate_limited') copy = 'Demasiadas preguntas seguidas, espera un momento.';
+      else if (e.code === 'refused') copy = 'No puedo responder a eso, prueba con otra pregunta sobre coches.';
+      addMessage('error', copy);
+      if (e.text) turns.push({ role: 'assistant', content: e.text });
+    } finally {
+      setBusy(false);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => {
+    const text = inputEl.value;
+    inputEl.value = '';
+    send(text);
+  });
+
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const text = inputEl.value;
+      inputEl.value = '';
+      send(text);
+    }
+  });
+
+  suggestionsEl.addEventListener('click', (e) => {
+    if (e.target.classList.contains('suggestion')) {
+      send(e.target.textContent);
+    }
+  });
+
+  (async () => {
+    sample = await claude.use('sample');
+    if (!sample) {
+      document.querySelector('.chat-panel').innerHTML = '<div class="unavailable">CarBot necesita ejecutarse dentro de Claude para poder chatear. Ábrelo desde tu página de Claude para probarlo.</div>';
+    }
+  })();
+</script>
+
+</body>
+</html>
